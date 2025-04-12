@@ -48,20 +48,20 @@ class Inventory:
         else:
             print(f"Не удалось экипировать предмет")
 
-class Logic:
-    def __init__(self, player, enemies):
-        self.player = player
+class Game:
+    def __init__(self, hero, enemies):
+        self.hero = hero
         self.enemies = enemies
         self.actions = Actions()
-        self.turns = Turns(player, enemies)
+        self.turns = Turns(hero, enemies)
         self.state = State()
     
     def game_loop(self):
         while True:
             current = self.turns.current_turn()
             
-            if current == self.player:
-                self.player_turn_manager()
+            if current == self.hero:
+                self.hero_turn_manager()
             else:
                 for enemy in self.enemies:
                     if enemy.health > 0:
@@ -69,7 +69,7 @@ class Logic:
 
             self.turns.next_turn()
 
-            if self.state.is_player_dead(self.player):
+            if self.state.is_hero_dead(self.hero):
                 print(f"смэрть")
                 break
 
@@ -77,31 +77,31 @@ class Logic:
                 print(f"победа")
                 break
     
-    def player_turn_manager(self):
-        print(f"\n[Ход игрока {self.player.symbol}]")
-        print(f"Здоровье: {self.player.health}/{self.player.max_health}")
+    def hero_turn_manager(self):
+        print(f"\n[Ход игрока {self.hero.symbol}]")
+        print(f"Здоровье: {self.hero.health}/{self.hero.max_health}")
         for enemy in self.enemies:
             if enemy.health > 0:
-             self.actions.attack_character(self.player, enemy)
+             self.actions.attack_character(self.hero, enemy)
              break
 
     def enemy_turn_manager(self, enemy):
         print(f"\n[Ход врага {enemy.symbol}]")
         print(f"Здоровье врага: {enemy.health}")
-        self.actions.attack_character(enemy, self.player)
+        self.actions.attack_character(enemy, self.hero)
 
 class Turns:
-    def __init__(self, player, enemies):
-        self.player = player
+    def __init__(self, hero, enemies):
+        self.hero = hero
         self.enemies = enemies
-        self.is_player_turn = True
+        self.is_hero_turn = True
 
     def next_turn(self):
-        self.is_player_turn = not self.is_player_turn
+        self.is_hero_turn = not self.is_hero_turn
 
     def current_turn(self):
-        if self.is_player_turn:
-            return self.player
+        if self.is_hero_turn:
+            return self.hero
         return self.enemies
     
 class Actions:
@@ -121,8 +121,18 @@ class Actions:
         return character.damage # урон врагов
     
 class State:
-    def is_player_dead(self, hero):
+    def is_hero_dead(self, hero):
         return hero.health <= 0
     
     def all_enemies_are_dead(self, enemies):
         return all(enemy.health <= 0 for enemy in enemies)
+    
+
+#test
+#hero = Hero(50, (0,0), '@')
+#enemies = [
+#    Enemy(200, 10, (1,1), 'Y'),
+#    Enemy(300, 5, (2,2), 'T')]
+#
+#game = Game(hero, enemies)
+#game.game_loop()
