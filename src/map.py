@@ -1,146 +1,6 @@
 import curses
 import random
 
-class Position:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-class Character:
-    def __init__(self, health, position):
-        self.health = health
-        self.max_health = health
-        self.position = position        
-        self.inventory = Inventory(5)
-
-class Hero(Character):
-    def __init__(self, health, position, symbol):
-        super().__init__(health, position)
-        self.symbol = symbol
-
-class Enemy(Character):
-    def __init__(self, health, damage, position, symbol):
-        super().__init__(health, position)
-        self.damage = damage
-        self.symbol = symbol
-
-class Item:
-    def __init__(self, title, type):
-        self.title = title
-        self.type = type
-
-class Sword(Item):
-    def __init__(self, title, type, damage):
-        super().__init__(title, type)
-        self.damage = damage
-
-class Inventory:
-    def __init__(self, size, items=[]):
-        self.items = items
-        self.size = size
-        self.active_slot = None
-    
-    def add_item(self, item):
-        if len(self.items) < self.size:
-            self.items.append(item)
-
-    def equip_sword(self, item):
-        if isinstance(item, Sword):
-            self.active_slot = item
-            print(f"Экипирован {item.title}")
-        else:
-            print(f"Не удалось экипировать предмет")
-
-class Game:
-    def __init__(self, hero, enemies):
-        self.hero = hero
-        self.enemies = enemies
-        self.actions = Actions()
-        self.turns = Turns(hero, enemies)
-        self.state = State()
-    
-    def game_loop(self):
-        while True:
-            current = self.turns.current_turn()
-            
-            if current == self.hero:
-                self.hero_turn_manager()
-            else:
-                for enemy in self.enemies:
-                    if enemy.health > 0:
-                        self.enemy_turn_manager(enemy)
-
-            self.turns.next_turn()
-
-            if self.state.is_hero_dead(self.hero):
-                print(f"смэрть")
-                break
-
-            if self.state.all_enemies_are_dead(self.enemies):
-                print(f"победа")
-                break
-    
-    def hero_turn_manager(self):
-        print(f"\n[Ход игрока {self.hero.symbol}]")
-        print(f"Здоровье: {self.hero.health}/{self.hero.max_health}")
-        for enemy in self.enemies:
-            if enemy.health > 0:
-             self.actions.attack_character(self.hero, enemy)
-             break
-
-    def enemy_turn_manager(self, enemy):
-        print(f"\n[Ход врага {enemy.symbol}]")
-        print(f"Здоровье врага: {enemy.health}")
-        self.actions.attack_character(enemy, self.hero)
-
-class Turns:
-    def __init__(self, hero, enemies):
-        self.hero = hero
-        self.enemies = enemies
-        self.is_hero_turn = True
-
-    def next_turn(self):
-        self.is_hero_turn = not self.is_hero_turn
-
-    def current_turn(self):
-        if self.is_hero_turn:
-            return self.hero
-        return self.enemies
-    
-class Actions:
-    def movement(self, character, direction):
-        print(f"{character} двигается на {direction}")  # заглушка. игрок/моб двигается на север/юг/запад/восток
-
-    def attack_character(self, attacker, target):
-        damage = self.total_damage(attacker)
-        target.health -= damage
-        print(f"{attacker} нанес {target} {damage} урона")
-
-    def total_damage(self, character):
-        if isinstance(character, Hero):
-            if character.inventory.active_slot:
-                return character.inventory.active_slot.damage
-            return 2 # стандартный урон игрового персонажа, условно кулаки
-        return character.damage # урон врагов
-    
-class State:
-    def is_hero_dead(self, hero):
-        return hero.health <= 0
-    
-    def all_enemies_are_dead(self, enemies):
-        return all(enemy.health <= 0 for enemy in enemies)
-    
-
-#test
-#hero = Hero(50, (0,0), '@')
-#enemies = [
-#    Enemy(200, 10, (1,1), 'Y'),
-#    Enemy(300, 5, (2,2), 'T')]
-#
-#game = Game(hero, enemies)
-#game.game_loop()
-
-
 class TileType(): #типы полей
     SPACE = 0
     FLOOR = 1
@@ -160,12 +20,12 @@ class Room:
         self.door_down = (x + (w//2), y + h)
         self.door_left = (x, y + (h//2))
     
-    def intersects(self, other): #проверка на пересечение комнат
+    def intersects(self, other): #проверка на 
         if (self.a[0] <= other.c[0]) and (self.c[0] >= other.a[0]) and (self.a[1] <= other.c[1]) and (self.c[1] >= other.a[1]) :
             return True
         return False
     
-    def too_close(self, other, min_distance=3): #проверка на близость комнат
+    def too_close(self, other, min_distance=3):
    
         expanded = Room(
             self.x - min_distance,
@@ -176,7 +36,7 @@ class Room:
         return expanded.intersects(other)
     
 
-class DungeonGenerator: 
+class DungeonGenerator:
     def __init__(self, width, height, min_rooms = 6, max_rooms = 9, min_size_room = 10, max_size_room = 20):
         self.width = width
         self.height = height
@@ -201,22 +61,22 @@ class DungeonGenerator:
             while len(self.rooms) < self.count_rooms:
                 # Генерация параметров комнаты с проверкой на минимальный размер
                 w = random.randint(self.min_size_room, self.max_size_room)
-                h = random.randint(max(3, self.min_size_room - 6), self.max_size_room - 6)  #
+                h = random.randint(max(3, self.min_size_room - 6), self.max_size_room - 6)  # Не меньше 3
                 
                 x = random.randint(1, self.width - w - 1)
                 y = random.randint(1, self.height - h - 1)
 
                 new_room = Room(x, y, w, h)
-                attempts += 1  
+                attempts += 1  # Увеличиваем счетчик при каждой попытке
 
                 if any(new_room.intersects(other) for other in self.rooms) or any(new_room.too_close(other) for other in self.rooms):
                     if attempts >= 1000:
-                        break  
+                        break  # Начинаем генерацию заново
                     continue
 
                 self.rooms.append(new_room)
                 self.create_room(new_room)
-                attempts = 0  
+                attempts = 0  # Сбрасываем счетчик после успешного размещения
 
             if len(self.rooms) >= self.min_rooms:
                 self.connect_rooms()
